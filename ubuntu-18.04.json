@@ -143,7 +143,17 @@
                                 "sudo systemctl restart kubelet",
 				"exit 0"
                         ]
+                },
+                {
+                        "pause_before": "20s",
+                        "type": "shell",
+                        "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+                        "inline": [
+                                "sudo apt-get install avahi-daemon avahi-discover avahi-utils libnss-mdns mdns-scan",
+				"exit 0"
+                        ]
                 }
+
 	],
 	"error-cleanup-provisioner": {
 		"type": "shell-local",
