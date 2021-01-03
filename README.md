@@ -1,4 +1,4 @@
-# Packer ubuntu proxmox template
+# Packer ubuntu with docker and kubernetes dependencies proxmox template
 
 This repo has a packer template file to create a cloud init enabled ubuntu server 18.04 proxmox template.
 
