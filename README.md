@@ -1,6 +1,6 @@
-# Packer ubuntu proxmox template
+# Packer ubuntu with docker and k8s dependencies proxmox template
 
-This repo has a packer template file to create a cloud init enabled ubuntu server 18.04 proxmox template.
+This repo has a packer template file to create a cloud init enabled ubuntu server 18.04 proxmox template. Swap is off.
 
 This repo has [Taskfile](https://taskfile.dev/#/) support to make running some of the common commands easier.
 

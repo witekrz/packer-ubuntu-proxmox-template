@@ -81,19 +81,95 @@
 				"sudo apt-get -y install qemu-guest-agent cloud-init",
 				"sudo apt-get -y install procps iputils-ping telnet netcat mc wget curl dnsutils iproute2 vim tcpdump",
 				"exit 0"
+	
 			]
-		}
+		},
+                {
+                        "pause_before": "20s",
+                        "type": "shell",
+                        "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+			"max_retries": 3,
+                        "inline": [
+				"sudo apt-get remove docker docker-engine docker.io containerd runc",
+				"sudo apt-get update && sudo apt-get install -y  apt-transport-https ca-certificates curl software-properties-common gnupg2",
+				"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key --keyring /etc/apt/trusted.gpg.d/docker.gpg add -",
+				"sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable'",
+				"sudo apt-get update && sudo apt-get install -y --allow-downgrades containerd.io=1.2.13-2 docker-ce=5:19.03.11~3-0~ubuntu-bionic docker-ce-cli=5:19.03.11~3-0~ubuntu-bionic",
+				"cat <<'EOF' | sudo tee /etc/docker/daemon.json",
+					"{",
+					  " \"exec-opts\": [\"native.cgroupdriver=systemd\"],",
+					  " \"log-driver\": \"json-file\",",
+					  " \"log-opts\": {",
+					    "  \"max-size\": \"100m\"",
+					  " },",
+					  " \"storage-driver\": \"overlay2\"",
+					"}",
+					"EOF",
+				"sudo mkdir -p /etc/systemd/system/docker.service.d",
+				"sudo systemctl daemon-reload",
+                                "sudo systemctl restart docker",
+				"sudo systemctl enable docker",
+				"exit 0"
+	
+			]
+		},
+                {
+                        "pause_before": "20s",
+                        "type": "shell",
+                        "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+                        "inline": [
+                                "cat <<'EOF' | sudo tee /etc/sysctl.d/k8s.conf",
+                                        "net.bridge.bridge-nf-call-ip6tables = 1",
+                                        "net.bridge.bridge-nf-call-iptables = 1",
+                                        "EOF",
+                                "sudo sysctl --system",
+                                "curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
+                                "cat <<'EOF' | sudo tee /etc/apt/sources.list.d/kubernetes.list",
+                                        "deb https://apt.kubernetes.io/ kubernetes-xenial main",
+                                        "EOF",
+                                "sudo apt-get update",
+                                "sudo apt-get install -y kubelet kubeadm kubectl",
+                                "sudo apt-mark hold kubelet kubeadm kubectl",
+				"exit 0"
+                        ]
+                },
+                {
+                        "pause_before": "20s",
+                        "type": "shell",
+                        "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+                        "inline": [
+                                "sudo systemctl daemon-reload",
+                                "sudo systemctl restart kubelet",
+				"sudo swapoff -a",
+				"sudo sed -i '/ swap / s/^/#/' /etc/fstab",
+				"exit 0"
+                        ]
+                },
+                {
+                        "pause_before": "20s",
+                        "type": "shell",
+                        "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+                        "inline": [
+                                "sudo apt-get -y install avahi-daemon avahi-discover avahi-utils libnss-mdns mdns-scan",
+				"exit 0"
+                        ]
+                }
+
 	],
+	"error-cleanup-provisioner": {
+		"type": "shell-local",
+		"inline": ["journalctl -xe | cat > crash_log.txt"]
+	},
 	"post-processors": [
 		{
 			"type": "shell-local",
 			"inline": [
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --scsihw virtio-scsi-pci",
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --ide2 {{user `datastore`}}:cloudinit",
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --boot c --bootdisk scsi0",
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --ciuser     {{ user `ssh_username` }}",
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --cipassword {{ user `ssh_password` }}",
-				"ssh root@{{user `proxmox_host`}} qm set {{user `vmid`}} --vga std"
+				"qm set {{user `vmid`}} --scsihw virtio-scsi-pci",
+				"qm set {{user `vmid`}} --ide2 {{user `datastore`}}:cloudinit",
+				"qm set {{user `vmid`}} --boot c --bootdisk scsi0",
+				"qm set {{user `vmid`}} --ciuser     {{ user `ssh_username` }}",
+				"qm set {{user `vmid`}} --cipassword {{ user `ssh_password` }}",
+				"qm set {{user `vmid`}} --vga std"
 			]
 		}
 	]
